@@ -215,9 +215,18 @@ kbd { font: inherit; font-size: var(--t-xs); opacity: 0.6; border: 1px solid cur
 .log__list li:last-child { color: var(--paper); }
 
 .dealer { position: absolute; right: 290px; bottom: 170px; z-index: 0; width: 240px; height: auto; pointer-events: none; opacity: 0; transform: translateX(60px); z-index: 1; }
-.paused { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: rgba(10, 31, 34, 0.7); }
-.paused p { font-size: var(--t-2xl); font-weight: 800; }
+/* The overlay covers the table, so it has to carry its own way out. */
+.paused { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: var(--s-4);
+  background: rgba(10, 31, 34, 0.82); backdrop-filter: blur(3px); }
 .paused[hidden] { display: none; }
+.paused__panel { display: grid; justify-items: center; gap: var(--s-3); text-align: center;
+  padding: var(--s-6); border-radius: 20px; border: 1px solid var(--rule); background: var(--felt-deep); box-shadow: var(--shadow); }
+.paused__title { font-size: var(--t-2xl); font-weight: 800; }
+.paused__by { color: var(--paper-dim); }
+.paused__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-2); margin-top: var(--s-2); }
+
+/* Deck: enabled but clearly waiting, so a tap can explain itself. */
+.pile--draw.is-off .card { opacity: 0.72; }
 
 #toggle-log-hidden { display: none; }
 #log-toggle { display: none; }

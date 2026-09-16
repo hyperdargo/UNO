@@ -23,6 +23,7 @@ MAX_ROOMS = 500
 TURN_CHOICES = (15, 30, 60)
 WAITING_GRACE = 30  # seconds a disconnected player keeps their seat in a lobby
 ABANDON_AFTER = 120  # seconds before a game with nobody connected is closed
+HOST_PAUSE_GRACE = 60  # seconds a paused table waits for an absent host before resuming
 FINISHED_TTL = 600
 
 
@@ -307,13 +308,16 @@ class RoomManager:
                 raise RoomError("Nothing to pause.")
             now = self.clock()
             if room.paused:
-                room.paused = False
-                room.turn_deadline = now + room.paused_remaining
-                room.bot_due = now + 1.0
+                self._resume(room, now)
             else:
                 room.paused = True
                 room.paused_remaining = max(0.0, room.turn_deadline - now)
             self.hooks.room_changed(room)
+
+    def _resume(self, room: Room, now: float) -> None:
+        room.paused = False
+        room.turn_deadline = now + room.paused_remaining
+        room.bot_due = now + 1.0
 
     # ------------------------------------------------------------ gameplay
     def act(self, user: str, action: str, data: dict) -> None:
@@ -464,7 +468,15 @@ class RoomManager:
         if everyone_away and min(away.values()) > ABANDON_AFTER:
             self._close(room)
             return
-        if room.paused or game.over:
+        if room.paused:
+            # Only the host can resume, so an absent host must not freeze the table.
+            if away.get(room.host, 0) > HOST_PAUSE_GRACE:
+                self._resume(room, now)
+                for name in room.humans:
+                    self.hooks.notice(name, "The host is away, so the game resumed.")
+                self.hooks.room_changed(room)
+            return
+        if game.over:
             return
 
         changed = False

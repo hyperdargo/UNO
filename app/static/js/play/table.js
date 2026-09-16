@@ -34,6 +34,8 @@ const els = {
   uno: $("#btn-uno"),
   log: $("#log"),
   paused: $("#paused-banner"),
+  pausedBy: $("#paused-by"),
+  resume: $("#resume-game"),
   pause: $("#pause-game"),
   dealer: $("#dealer"),
   under: $("#under-card"),
@@ -118,8 +120,9 @@ function renderSeats(room, game, handlers) {
 // ------------------------------------------------------------------ piles
 function renderPiles(game, myTurn) {
   els.drawCount.textContent = `${game.draw_count} left`;
-  els.drawPile.disabled = !game.can_draw;
   els.drawPile.classList.toggle("is-hot", game.can_draw && game.playable.length === 0);
+  els.drawPile.classList.toggle("is-off", !game.can_draw);
+  els.drawPile.setAttribute("aria-disabled", String(!game.can_draw));
   els.drawPile.setAttribute("aria-label", game.pending_draw && myTurn ? `Take ${game.pending_draw} cards` : "Draw a card");
 
   const top = game.top_card;
@@ -421,9 +424,15 @@ export function renderTable(room, handlers) {
   renderHand(game, myTurn, handlers);
   renderLog(game);
   els.status.textContent = describeTurn(room, game);
+  const host = room.host === me;
   els.paused.hidden = !room.paused;
-  els.pause.hidden = room.host !== me || game.phase === "over";
-  els.pause.textContent = room.paused ? "Resume" : "Pause";
+  els.pausedBy.textContent = host
+    ? "Nobody can play until you resume."
+    : `Waiting for ${room.host} to resume.`;
+  els.resume.hidden = !host;
+  // While paused the overlay owns the resume action, so the bar button would be dead.
+  els.pause.hidden = !host || room.paused || game.phase === "over";
+  els.pause.textContent = "Pause";
 
   els.draw.hidden = !game.can_draw;
   els.draw.firstChild.textContent = game.pending_draw ? `Take ${game.pending_draw} ` : "Draw ";

@@ -161,7 +161,16 @@
     </aside>
 
     <img class="dealer" id="dealer" src="{{ asset('img/dealer.webp') }}" alt="" width="640" height="640" loading="lazy" decoding="async">
-    <div class="paused" id="paused-banner" hidden><p>Paused by the host</p></div>
+    <div class="paused" id="paused-banner" hidden>
+      <div class="paused__panel">
+        <p class="paused__title">Game paused</p>
+        <p class="paused__by" id="paused-by"></p>
+        <div class="paused__actions">
+          <button class="btn btn--primary" type="button" id="resume-game" hidden>Resume game</button>
+          <button class="btn btn--ghost" type="button" id="paused-leave">Leave table</button>
+        </div>
+      </div>
+    </div>
   </section>
 </main>
 

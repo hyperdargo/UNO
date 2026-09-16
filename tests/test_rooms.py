@@ -235,3 +235,25 @@ def test_player_payload_hides_other_hands(env):
     bob_ids = {c.id for c in room.game.hands["bob"]}
     assert {c["id"] for c in payload["game"]["hand"]} == bob_ids
     assert "ann" not in str(payload["game"]["hand"])
+
+
+def test_paused_table_resumes_when_the_host_vanishes(env):
+    mgr, hooks, clock = env
+    room = mgr.create("ann", "T", turn_seconds=15)
+    mgr.join("bob", room.id)
+    mgr.connect("ann")
+    mgr.connect("bob")
+    mgr.start("ann")
+    mgr.toggle_pause("ann")
+    assert room.paused
+
+    mgr.disconnect("ann")
+    clock.t += 30
+    mgr.tick()
+    assert room.paused, "a short absence should not resume the game"
+
+    clock.t += 40
+    mgr.tick()
+    assert not room.paused
+    assert room.turn_deadline > clock.t
+    assert any("host is away" in message for _, message in hooks.notices)

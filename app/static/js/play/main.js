@@ -367,8 +367,37 @@ async function maybePrompt() {
   }
 }
 
-$("#draw-pile").addEventListener("click", () => emit("game:action", { action: "draw" }));
-$("#btn-draw").addEventListener("click", () => emit("game:action", { action: "draw" }));
+// Tapping the deck is the obvious thing to try, so when it can't deal, say why.
+function tryDraw() {
+  const game = room && room.game;
+  if (!game || room.status !== "playing") return;
+  if (room.paused) {
+    toast("The game is paused.", "error");
+    return;
+  }
+  if (game.spectating) {
+    toast("You're out of this round. You can watch or leave the table.", "error");
+    return;
+  }
+  if (game.current !== me) {
+    toast(`It's ${game.current}'s turn.`, "error");
+    return;
+  }
+  if (game.phase === "roulette") {
+    maybePrompt();
+    return;
+  }
+  if (game.drawn_card_id) {
+    toast(game.can_pass ? "You already drew. Play that card or pass." : "Play the card you drew.", "error");
+    return;
+  }
+  emit("game:action", { action: "draw" });
+}
+
+$("#draw-pile").addEventListener("click", tryDraw);
+$("#btn-draw").addEventListener("click", tryDraw);
+$("#resume-game").addEventListener("click", () => emit("room:pause"));
+$("#paused-leave").addEventListener("click", () => emit("room:leave"));
 $("#btn-pass").addEventListener("click", () => emit("game:action", { action: "pass" }));
 $("#btn-uno").addEventListener("click", () => emit("game:action", { action: "call_uno" }));
 $("#pause-game").addEventListener("click", () => emit("room:pause"));
