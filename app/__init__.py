@@ -89,6 +89,7 @@ def create_app(config: type[Config] = Config) -> Flask:
     init_sockets(app)
 
     build = _build_id(app.static_folder)
+    app.config["BUILD_ID"] = build
 
     @app.get("/static/v/<version>/<path:filename>")
     def versioned_static(version: str, filename: str):

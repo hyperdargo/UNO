@@ -71,4 +71,5 @@ def sitemap():
 
 @bp.get("/healthz")
 def health():
-    return jsonify({"ok": True})
+    # BUILD_ID changes with every deploy: handy for checking what is actually live.
+    return jsonify({"ok": True, "build": current_app.config.get("BUILD_ID")})

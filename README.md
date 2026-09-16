@@ -191,6 +191,16 @@ Egg settings that work as they come:
 | `REQUIREMENTS_FILE` | `requirements.txt` |
 | `AUTO_UPDATE` | `1` to pull new commits on boot |
 
+With `AUTO_UPDATE` off, the startup script skips `git pull` entirely, so **restarting the server keeps running the commit you first installed**. Turn it on, then restart, to pick up a new version.
+
+To see which build is live:
+
+```bash
+curl https://your-domain/healthz    # {"ok": true, "build": "1789535162"}
+```
+
+The build stamp changes on every deploy.
+
 Then open the panel's allocated address in a browser. Run **one** instance per game server: rooms live in that process's memory.
 
 **If the page sits on "Connecting to the table server…"**, the proxy in front of your panel is refusing WebSocket upgrades. You will see `Invalid websocket upgrade` in the server log and `GET /socket.io/?...transport=websocket ... 400` in the browser console. The client falls back to HTTP long-polling on its own, so the game still works.
