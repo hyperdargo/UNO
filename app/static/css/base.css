@@ -17,6 +17,12 @@
   --blue: #2b63d9;
   --wild: #1a1c1f;
 
+  /* UNO Flip dark side */
+  --pink: #e0399a;
+  --teal: #0f9c9c;
+  --orange: #e8701a;
+  --purple: #7b3fd4;
+
   --danger: #ff6b5e;
   --ok: #4fd18b;
 
@@ -24,7 +30,7 @@
   --radius-sm: 9px;
   --shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 12px 28px -12px rgba(0, 0, 0, 0.6);
 
-  --font: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font: "Bricolage Grotesque", "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
 
   /* 1.25 type scale */
   --t-xs: 0.8rem;
@@ -118,7 +124,7 @@ a { color: inherit; }
 .segmented { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; gap: 4px;
   background: var(--felt-deep); border: 1px solid var(--rule); border-radius: 999px; }
 .segmented input { position: absolute; opacity: 0; pointer-events: none; }
-.segmented label { display: grid; place-items: center; min-height: 38px; padding: 0 var(--s-4);
+.segmented label { display: grid; place-items: center; min-height: 38px; padding: 0 var(--s-3); text-align: center;
   border-radius: 999px; cursor: pointer; font-weight: 600; color: var(--paper-dim); transition: background-color 160ms, color 160ms; }
 .segmented input:checked + label { background: var(--paper); color: var(--felt); }
 .segmented input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -150,6 +156,15 @@ a { color: inherit; }
 .card--green { --c: var(--green); }
 .card--blue { --c: var(--blue); }
 .card--wild { --c: var(--wild); }
+.card--pink { --c: var(--pink); }
+.card--teal { --c: var(--teal); }
+.card--orange { --c: var(--orange); }
+.card--purple { --c: var(--purple); }
+/* Dark-side cards carry a black border, like the printed deck. */
+.card--pink, .card--teal, .card--orange, .card--purple {
+  box-shadow: 0 0 0 max(2px, calc(var(--w) * 0.035)) #0b0c0d inset,
+    0 calc(var(--w) * 0.06) calc(var(--w) * 0.16) -2px rgba(0, 0, 0, 0.6);
+}
 
 .card__face {
   position: relative; z-index: 1;

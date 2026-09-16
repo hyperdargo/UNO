@@ -107,6 +107,25 @@ kbd { font: inherit; font-size: var(--t-xs); opacity: 0.6; border: 1px solid cur
 }
 .table.is-my-turn { box-shadow: inset 0 0 0 3px rgba(242, 178, 51, 0.55); }
 
+/* UNO Flip: the dark side takes the table with it. */
+.table { transition: background-color 600ms ease, background-image 600ms ease; }
+.table--dark {
+  background: radial-gradient(90% 70% at 45% 45%, #241b3a 0%, #150f24 60%, #0b0813 100%);
+}
+.table--dark .seat { background: rgba(11, 8, 19, 0.75); }
+.table--dark .log { background: rgba(11, 8, 19, 0.7); }
+
+/* The faces every other player can read but you can't. */
+.seat__backs { grid-column: 1 / -1; display: flex; justify-content: center; margin-top: var(--s-2); }
+.seat__backs .card { margin-left: -14px; }
+.seat__backs .card:first-child { margin-left: 0; }
+.seat__more { align-self: center; margin-left: var(--s-2); font-size: var(--t-xs); color: var(--paper-dim); }
+.table--flip .seat { border-radius: var(--radius); min-width: 190px; }
+
+.under { display: grid; justify-items: center; gap: var(--s-2); opacity: 0.75; }
+.under__label { font-size: var(--t-xs); color: var(--muted); text-align: center; max-width: 9ch; }
+.under .card { filter: brightness(0.85); }
+
 .table__seats { grid-area: seats; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-3); padding: var(--s-4); }
 .seat {
   position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: var(--s-3); align-items: center;
@@ -159,7 +178,7 @@ kbd { font: inherit; font-size: var(--t-xs); opacity: 0.6; border: 1px solid cur
 .table__status[data-remaining]:not([data-remaining=""])::after { content: "  " attr(data-remaining) "s"; color: var(--muted); font-variant-numeric: tabular-nums; white-space: pre; }
 .table__status[data-urgent]::after { color: var(--danger); }
 .callout {
-  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 6;
+  position: absolute; left: 50%; top: 8%; transform: translate(-50%, -50%); z-index: 6;
   font-size: clamp(2.2rem, 7vw, 4.5rem); font-weight: 800; letter-spacing: -0.04em; color: var(--accent);
   text-shadow: 0 6px 30px rgba(0, 0, 0, 0.6); pointer-events: none; opacity: 0; white-space: nowrap;
 }
@@ -222,6 +241,9 @@ kbd { font: inherit; font-size: var(--t-xs); opacity: 0.6; border: 1px solid cur
   .pile--discard { width: 88px; height: 132px; }
   .pile--draw::before, .pile--draw::after { border-radius: 10px; }
   .pending__value { font-size: var(--t-2xl); }
+  .seat__backs .card { --w: 24px; margin-left: -10px; }
+  .table--flip .seat { min-width: 0; }
+  .under { display: none; }
   .table__status { font-size: var(--t-md); }
   .hand { justify-content: safe center; min-height: 0; padding: 20px var(--s-2) 4px; }
   .hand__card .card { --w: clamp(58px, 21vw, 86px); }
@@ -251,6 +273,10 @@ kbd { font: inherit; font-size: var(--t-xs); opacity: 0.6; border: 1px solid cur
 .swatch--yellow { background: var(--yellow); color: #231a05; }
 .swatch--green { background: var(--green); }
 .swatch--blue { background: var(--blue); }
+.swatch--pink { background: var(--pink); }
+.swatch--teal { background: var(--teal); }
+.swatch--orange { background: var(--orange); }
+.swatch--purple { background: var(--purple); }
 .swatch small { display: block; font-weight: 500; font-size: var(--t-xs); opacity: 0.85; }
 .targets { display: grid; gap: var(--s-2); }
 .targets .btn { justify-content: space-between; border-radius: var(--radius-sm); min-height: 54px; }

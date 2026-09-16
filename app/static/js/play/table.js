@@ -6,10 +6,14 @@ import { $, h } from "../lib/dom.js";
 import { motionReduced } from "../lib/settings.js";
 import { sound, speak } from "../lib/sound.js";
 
-const COLOR_VARS = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)", blue: "var(--blue)" };
+const COLOR_VARS = {
+  red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)", blue: "var(--blue)",
+  pink: "var(--pink)", teal: "var(--teal)", orange: "var(--orange)", purple: "var(--purple)",
+};
 const SEAT_TONES = ["#8a3b36", "#806321", "#2f6b4c", "#34518f", "#6b4a86", "#35706f"];
 const SYMBOLS = {
-  skip: "Skip", reverse: "Reverse", draw2: "+2", draw4: "+4", skip_all: "Skip Everyone", discard_all: "Discard All",
+  skip: "Skip", reverse: "Reverse", draw1: "+1", draw2: "+2", draw4: "+4", draw5: "+5",
+  skip_all: "Skip Everyone", discard_all: "Discard All", flip: "Flip",
 };
 
 const els = {
@@ -32,6 +36,7 @@ const els = {
   paused: $("#paused-banner"),
   pause: $("#pause-game"),
   dealer: $("#dealer"),
+  under: $("#under-card"),
 };
 
 let lastSeq = 0;
@@ -80,6 +85,13 @@ function renderSeats(room, game, handlers) {
           dataset: { seat: seat.name },
           "aria-label": `${seat.name}${isBot ? " (bot)" : ""}, ${statusText}${game.current === seat.name ? ", taking their turn" : ""}`,
         }, avatar, h("span", { class: "seat__name", text: seat.name }), meta);
+
+        if (seat.backs && seat.backs.length) {
+          const strip = h("span", { class: "seat__backs" });
+          seat.backs.slice(0, 9).forEach((card) => strip.append(cardEl(card, "xs")));
+          if (seat.backs.length > 9) strip.append(h("span", { class: "seat__more", text: `+${seat.backs.length - 9}` }));
+          el.append(strip);
+        }
 
         if (seat.uno_vulnerable && !game.spectating && game.phase !== "over") {
           el.append(h("button", {
@@ -130,6 +142,14 @@ function renderPiles(game, myTurn) {
 
   els.pending.hidden = !game.pending_draw;
   els.pendingValue.textContent = `+${game.pending_draw}`;
+
+  els.under.hidden = !game.under_card;
+  if (game.under_card) {
+    els.under.replaceChildren(
+      h("span", { class: "under__label", text: "Under the pile" }),
+      cardEl(game.under_card, "s"),
+    );
+  }
 }
 
 // ------------------------------------------------------------------- hand
@@ -286,6 +306,11 @@ function animate(events, before, room, game) {
         for (let i = 0; i < n; i++) fly(backEl("s"), before.draw, target, { delay: i * 70, duration: 380 });
         break;
       }
+      case "flip":
+        sound.stack();
+        label = { text: event.side === "dark" ? "Dark side" : "Light side", danger: event.side === "dark" };
+        if (!reduced) flipHand();
+        break;
       case "stack":
         sound.stack();
         label = { text: `+${event.total}`, danger: true };
@@ -336,6 +361,23 @@ function animate(events, before, room, game) {
   if (label) callout(label.text, label.danger);
 }
 
+function flipHand() {
+  [...els.hand.children].forEach((btn, i) => {
+    btn.animate(
+      [
+        { transform: "rotateY(0deg)" },
+        { transform: "rotateY(90deg)", offset: 0.5 },
+        { transform: "rotateY(0deg)" },
+      ],
+      { duration: 520, delay: i * 40, easing: "ease-in-out" },
+    );
+  });
+  els.stack.animate(
+    [{ transform: "rotateY(0deg)" }, { transform: "rotateY(180deg)" }],
+    { duration: 620, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+  );
+}
+
 function dealIn() {
   if (motionReduced()) return;
   [...els.hand.children].forEach((btn, i) => {
@@ -372,6 +414,8 @@ export function renderTable(room, handlers) {
   const newEvents = game.events.filter((e) => e.seq > lastSeq);
 
   els.root.classList.toggle("is-my-turn", myTurn);
+  els.root.classList.toggle("table--dark", game.side === "dark");
+  els.root.classList.toggle("table--flip", game.mode === "flip");
   renderSeats(room, game, handlers);
   renderPiles(game, myTurn);
   renderHand(game, myTurn, handlers);

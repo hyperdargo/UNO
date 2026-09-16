@@ -8,7 +8,7 @@ from __future__ import annotations
 import random
 from collections import Counter
 
-from .cards import COLORS, Card
+from .cards import COLORS, DARK_COLORS, LIGHT, Card
 from .engine import PLAY, ROULETTE, Game
 
 BOT_NAMES = ["Ada", "Blaise", "Grace", "Alan", "Hedy", "Linus", "Margaret", "Edsger", "Barbara"]
@@ -19,12 +19,10 @@ def is_bot(name: str) -> bool:
     return name.startswith(BOT_PREFIX)
 
 
-def best_color(hand: list[Card], rng: random.Random) -> str:
+def best_color(hand: list[Card], rng: random.Random, colors: tuple[str, ...] = COLORS) -> str:
     counts = Counter(c.color for c in hand if not c.is_wild)
-    if not counts:
-        return rng.choice(COLORS)
-    top = max(counts.values())
-    return rng.choice([c for c in COLORS if counts[c] == top])
+    top = max((counts[c] for c in colors), default=0)
+    return rng.choice([c for c in colors if counts[c] == top])
 
 
 def _score(game: Game, me: str, card: Card) -> float:
@@ -33,8 +31,9 @@ def _score(game: Game, me: str, card: Card) -> float:
     danger = len(game.hands[nxt]) <= 2
     score = 0.0
 
-    if card.draw_value:
-        score += 6 + card.draw_value if danger else 1 + card.draw_value * 0.2
+    if card.draw_value or card.value == "wild_draw_color":
+        weight = card.draw_value or 6
+        score += 6 + weight if danger else 1 + weight * 0.2
     if card.value in ("skip", "skip_all", "reverse"):
         score += 7 if danger else 2
     if card.value == "discard_all":
@@ -47,6 +46,10 @@ def _score(game: Game, me: str, card: Card) -> float:
     if game.is_no_mercy and card.value == "7":
         smallest = min(len(game.hands[p]) for p in game.players if p != me)
         score += (len(hand) - 1 - smallest) * 1.5
+    if card.value == "flip":
+        # Escape the dark side when holding a lot; send a short-handed opponent into it.
+        score += 5 if game.side != LIGHT and len(hand) > 4 else 0
+        score += 5 if game.side == LIGHT and danger else 0
     if game.is_no_mercy and card.value == "0":
         prev = game.players[(game.players.index(me) - game.direction) % len(game.players)]
         score += (len(hand) - 1 - len(game.hands[prev])) * 1.2
@@ -60,7 +63,7 @@ def take_turn(game: Game, me: str, rng: random.Random) -> None:
     hand = game.hands[me]
 
     if game.phase == ROULETTE:
-        game.spin_roulette(me, best_color(hand, rng))
+        game.spin_roulette(me, best_color(hand, rng, game.colors))
         return
 
     if game.phase != PLAY:
@@ -83,7 +86,11 @@ def take_turn(game: Game, me: str, rng: random.Random) -> None:
         card = max(playable, key=lambda c: _score(game, me, c) + rng.random() * 0.5)
 
     remaining = [c for c in hand if c.id != card.id]
-    color = best_color(remaining, rng) if card.is_wild else None
+    color = best_color(remaining, rng, game.colors) if card.is_wild else None
+    if game.is_flip and card.value == "flip":
+        # The pile turns over; if a wild surfaces the flipper names the color.
+        other = DARK_COLORS if game.side == LIGHT else COLORS
+        color = rng.choice(other)
     target = None
     if game.is_no_mercy and card.value == "7":
         others = [p for p in game.players if p != me]

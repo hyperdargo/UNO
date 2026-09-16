@@ -4,15 +4,15 @@
 {% block meta %}
   <link rel="canonical" href="{{ public_url }}/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="UNO: Normal &amp; No Mercy">
-  <meta property="og:description" content="Play in your browser with friends or bots. Classic rules, or No Mercy with stacking draws and the 25-card knockout.">
+  <meta property="og:title" content="UNO: Normal, No Mercy &amp; Flip">
+  <meta property="og:description" content="Play in your browser with friends or bots. Classic rules, No Mercy with stacking draws, or Flip with its double-sided deck.">
   <meta property="og:url" content="{{ public_url }}/">
   <meta property="og:image" content="{{ public_url }}{{ url_for('static', filename='img/og-image.png') }}">
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">{{ {
     "@context": "https://schema.org",
     "@type": "VideoGame",
-    "name": "UNO: Normal & No Mercy (fan-made)",
+    "name": "UNO: Normal, No Mercy & Flip (fan-made)",
     "url": public_url ~ "/",
     "applicationCategory": "Game",
     "gamePlatform": "Web browser",
@@ -47,7 +47,7 @@
   <section class="hero">
     <div class="hero__copy">
       <h1>Match the color.<br>Empty your hand.<br>Show no mercy.</h1>
-      <p class="hero__lede">The card game you already know, in your browser. Open a table for friends, or fill the seats with bots and play right now.</p>
+      <p class="hero__lede">The card game you already know, in your browser. Three rule sets — Normal, No Mercy and Flip — with friends or bots, right now.</p>
       <div class="hero__actions">
         {% if current_user.is_authenticated %}
           <a class="btn btn--primary btn--big" href="{{ url_for('main.play') }}">Open the lobby</a>
@@ -104,29 +104,32 @@
   <section class="modes" id="modes" aria-labelledby="modes-title">
     <div class="section-head">
       <h2 id="modes-title">Two ways to play</h2>
-      <p>Pick the mode when you open a table. Everyone at the table plays the same rules.</p>
+      <p>Pick one when you open a table. Everyone at the table plays the same rules.</p>
     </div>
-    <div class="compare" role="table" aria-label="Normal and No Mercy rules compared">
+    <div class="compare compare--three" role="table" aria-label="Normal, No Mercy and Flip rules compared">
       <div class="compare__row compare__row--head" role="row">
         <span role="columnheader"><span class="visually-hidden">Rule</span></span>
         <span role="columnheader">Normal</span>
         <span role="columnheader">No Mercy</span>
+        <span role="columnheader">Flip</span>
       </div>
-      <div class="compare__row" role="row"><span role="rowheader">Deck</span><span role="cell">108 cards</span><span role="cell">168 cards</span></div>
-      <div class="compare__row" role="row"><span role="rowheader">Can't play?</span><span role="cell">Draw one. Play it if it fits, or pass.</span><span role="cell">Keep drawing until something fits, then play it.</span></div>
-      <div class="compare__row" role="row"><span role="rowheader">Draw cards</span><span role="cell">+2 and +4 hit the next player, who loses their turn.</span><span role="cell">+2, +4, +6 and +10 stack. Answer with an equal or bigger draw card, or take the whole pile.</span></div>
-      <div class="compare__row" role="row"><span role="rowheader">Sevens and zeros</span><span role="cell">Ordinary number cards.</span><span role="cell">A 7 swaps your hand with a player you pick. A 0 passes every hand along.</span></div>
-      <div class="compare__row" role="row"><span role="rowheader">Knockouts</span><span role="cell">None. Play until someone goes out.</span><span role="cell">Reach 25 cards and you're out. Last player standing also wins.</span></div>
-      <div class="compare__row" role="row"><span role="rowheader">Forgot to call UNO?</span><span role="cell" class="span-2">Anyone who catches you before the next move makes you draw 2.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Deck</span><span role="cell">108 cards</span><span role="cell">168 cards</span><span role="cell">112 double-sided cards</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Can't play?</span><span role="cell">Draw one. Play it if it fits, or pass.</span><span role="cell">Keep drawing until something fits, then play it.</span><span role="cell">Draw one. Play it if it fits, or pass.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Draw cards</span><span role="cell">+2 and +4 hit the next player, who loses their turn.</span><span role="cell">+2, +4, +6 and +10 stack. Answer with an equal or bigger draw card, or take the pile.</span><span role="cell">Light side: +1 and Wild Draw Two. Dark side: +5 and Wild Draw Color.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">The twist</span><span role="cell">None. The game you grew up with.</span><span role="cell">A 7 swaps your hand with a player you pick. A 0 passes every hand along.</span><span role="cell">A Flip card turns the whole deck over — piles, hands, everything — onto the harsher dark side.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">What you can see</span><span role="cell" class="span-2">Everyone’s card count, and nothing else.</span><span role="cell">You hold your cards facing you, so everyone else can read your dark faces. You can’t.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Knockouts</span><span role="cell">None. Play until someone goes out.</span><span role="cell">Reach 25 cards and you’re out. Last player standing also wins.</span><span role="cell">None.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Forgot to call UNO?</span><span role="cell" class="span-3">Anyone who catches you before the next move makes you draw 2.</span></div>
     </div>
   </section>
 
   <!-- Card guide: reference, no motion. -->
   <section class="guide" id="cards" aria-labelledby="cards-title">
     <div class="section-head">
-      <h2 id="cards-title">The cards only No Mercy has</h2>
-      <p>Everything from the classic deck is still here. These are added on top.</p>
+      <h2 id="cards-title">The cards beyond the classic deck</h2>
+      <p>Everything you know is still here. These come with the other two modes.</p>
     </div>
+    <h3 class="guide__sub">What No Mercy adds</h3>
     <ul class="guide__list">
       <li>{{ card("green", "skip_all", "s") }}<div><h3>Skip Everyone</h3><p>Every other player is skipped. You go again.</p></div></li>
       <li>{{ card("yellow", "discard_all", "s") }}<div><h3>Discard All</h3><p>Play it and throw out every other card of that color with it.</p></div></li>
@@ -136,13 +139,23 @@
       <li>{{ card("wild", "wild_draw10", "s") }}<div><h3>Wild Draw 10</h3><p>The biggest draw in the deck. Nothing smaller can answer it.</p></div></li>
       <li>{{ card("wild", "wild_roulette", "s") }}<div><h3>Color Roulette</h3><p>The next player names a color and flips cards until it shows up. They keep every card flipped.</p></div></li>
     </ul>
+
+    <h3 class="guide__sub">What Flip adds</h3>
+    <ul class="guide__list">
+      <li>{{ card("blue", "flip", "s") }}<div><h3>Flip</h3><p>Turns the deck, both piles and every hand over. The dark side stays in play until someone flips it back.</p></div></li>
+      <li>{{ card("red", "draw1", "s") }}<div><h3>Draw One</h3><p>The light side plays gently: the next player takes one card and misses their turn.</p></div></li>
+      <li>{{ card("orange", "draw5", "s") }}<div><h3>Draw Five</h3><p>The same idea on the dark side. Five cards, no turn.</p></div></li>
+      <li>{{ card("purple", "skip_all", "s") }}<div><h3>Skip Everyone</h3><p>Every other player loses their turn and it comes straight back to you.</p></div></li>
+      <li>{{ card("wild", "wild_draw_color", "s", label="wild draw color") }}<div><h3>Wild Draw Color</h3><p>Name a color. The next player draws until they find it, however long that takes.</p></div></li>
+      <li>{{ card("teal", "7", "s") }}<div><h3>Pink, teal, orange, purple</h3><p>The dark side has its own four colors. Same matching, meaner cards.</p></div></li>
+    </ul>
   </section>
 
   <!-- How a table works: a real three-step sequence. -->
   <section class="tables" aria-labelledby="tables-title">
     <h2 id="tables-title">Getting a game going</h2>
     <ol class="tables__steps">
-      <li><h3>Open a table</h3><p>Name it, choose Normal or No Mercy, and set a 15, 30 or 60 second turn timer.</p></li>
+      <li><h3>Open a table</h3><p>Name it, pick Normal, No Mercy or Flip, and set a 15, 30 or 60 second turn timer.</p></li>
       <li><h3>Fill the seats</h3><p>Friends join from the lobby or with your private table code. Empty seats take bots. Up to 10 players.</p></li>
       <li><h3>Deal</h3><p>Refresh or lose signal and your seat waits for you. If your timer runs out, a move is made so the table keeps going.</p></li>
     </ol>

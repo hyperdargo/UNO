@@ -1,10 +1,15 @@
+import { COLORS, DARK_COLORS } from "../lib/cards.js";
 import { $, h, toast } from "../lib/dom.js";
 import { motionReduced, saveSettings, settings } from "../lib/settings.js";
 import { sound, speak } from "../lib/sound.js";
 import { fitHand, renderTable, resetTable, setTimer } from "./table.js";
 
 const me = document.querySelector('meta[name="username"]').content;
-const MODE_NAMES = { normal: "Normal", no_mercy: "No Mercy" };
+const MODE_NAMES = { normal: "Normal", no_mercy: "No Mercy", flip: "Flip" };
+const COLOR_LABELS = {
+  red: "Red", yellow: "Yellow", green: "Green", blue: "Blue",
+  pink: "Pink", teal: "Teal", orange: "Orange", purple: "Purple",
+};
 const CHAT = [
   ["hello", "Hello!"], ["gg", "Good game!"], ["nice", "Nice one."], ["oops", "Oops!"],
   ["haha", "Ha ha!"], ["hurry", "Your move!"], ["revenge", "I'll remember that."], ["mercy", "No mercy!"],
@@ -21,13 +26,23 @@ if (typeof window.io !== "function") {
   throw new Error("socket.io client missing");
 }
 
-const socket = window.io({ transports: ["websocket", "polling"] });
+// No transport list: start on HTTP polling and upgrade to WebSocket only if
+// the network in front of us allows it. Panel proxies often don't.
+const socket = window.io({ withCredentials: true });
+
+// If the connection never comes up, say something more useful than "connecting".
+const bootTimer = setTimeout(() => {
+  if (!socket.connected) {
+    $("#booting").textContent = "Still trying to reach the table server. Check your connection, then refresh.";
+  }
+}, 8000);
 const emit = (event, data) => {
   sound.unlock();
   socket.emit(event, data || {});
 };
 
 socket.on("connect", () => {
+  clearTimeout(bootTimer);
   $("#conn-banner").hidden = true;
   $("#booting").hidden = true;
 });
@@ -238,15 +253,22 @@ function closeDialogs() {
   document.querySelectorAll("dialog[open]").forEach((d) => d.close("dismissed"));
 }
 
-function askColor(title, lede) {
+function askColor(title, lede, colors = COLORS) {
   return new Promise((resolve) => {
     $("#color-title").textContent = title;
     $("#color-lede").textContent = lede;
+    $("#swatches").replaceChildren(
+      ...colors.map((color) => h("button", { class: `swatch swatch--${color}`, value: color, text: COLOR_LABELS[color] })),
+    );
     const dialog = openDialog("color-dialog");
     dialog.returnValue = "";
-    dialog.addEventListener("close", () => resolve(["red", "yellow", "green", "blue"].includes(dialog.returnValue) ? dialog.returnValue : null), { once: true });
+    dialog.addEventListener("close", () => resolve(colors.includes(dialog.returnValue) ? dialog.returnValue : null), { once: true });
   });
 }
+
+// The colors currently in play, and the ones on the far side of a Flip deck.
+const sideColors = (game) => (game.side === "dark" ? DARK_COLORS : COLORS);
+const otherSideColors = (game) => (game.side === "dark" ? COLORS : DARK_COLORS);
 
 function askTarget() {
   return new Promise((resolve) => {
@@ -295,8 +317,18 @@ const tableHandlers = {
     prompting = true;
     try {
       if (card.color === "wild") {
-        const lede = card.value === "wild_roulette" ? "This becomes the color in play. The next player spins for their own color." : "This becomes the color in play.";
-        color = await askColor("Pick a color", lede);
+        let lede = "This becomes the color in play.";
+        if (card.value === "wild_roulette") lede = "This becomes the color in play. The next player spins for their own color.";
+        if (card.value === "wild_draw_color") lede = "The next player draws until this color turns up, then loses their turn.";
+        color = await askColor("Pick a color", lede, sideColors(game));
+        if (!color) return;
+      } else if (game.mode === "flip" && card.value === "flip" && game.under_card && game.under_card.color === "wild") {
+        // Turning the pile over reveals the card underneath — and it's a wild.
+        color = await askColor(
+          "The pile turns over",
+          "A wild is waiting underneath. Name the color play continues with.",
+          otherSideColors(game),
+        );
         if (!color) return;
       }
       const others = game.seats.filter((s) => s.status === "playing" && s.name !== me);
@@ -324,7 +356,11 @@ async function maybePrompt() {
   if (!game || prompting) return;
   if (game.phase === "roulette" && game.current === me && room.status === "playing" && !room.paused) {
     prompting = true;
-    const color = await askColor("Color Roulette", "Name a color. You'll flip cards until it shows up and keep everything you flip.");
+    const color = await askColor(
+      "Color Roulette",
+      "Name a color. You'll flip cards until it shows up and keep everything you flip.",
+      sideColors(game),
+    );
     prompting = false;
     if (color && room.game.phase === "roulette" && room.game.current === me) emit("game:action", { action: "roulette", color });
     else if (room.game.phase === "roulette" && room.game.current === me) setTimeout(maybePrompt, 50);

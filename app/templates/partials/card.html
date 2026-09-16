@@ -1,6 +1,6 @@
 {#- Server-rendered card. Must stay in sync with static/js/lib/cards.js. -#}
-{%- set GLYPHS = ["skip", "reverse", "skip_all", "discard_all", "wild", "wild_roulette"] -%}
-{%- set TEXT = {"draw2": "+2", "draw4": "+4", "wild_draw4": "+4", "wild_reverse_draw4": "+4", "wild_draw6": "+6", "wild_draw10": "+10"} -%}
+{%- set GLYPHS = ["skip", "reverse", "skip_all", "discard_all", "wild", "wild_roulette", "flip", "wild_draw_color"] -%}
+{%- set TEXT = {"draw1": "+1", "draw2": "+2", "draw4": "+4", "draw5": "+5", "wild_draw2": "+2", "wild_draw4": "+4", "wild_reverse_draw4": "+4", "wild_draw6": "+6", "wild_draw10": "+10"} -%}
 {%- macro card(color, value, size="m", label=None, extra="") -%}
 <div class="card card--{{ color }} card--{{ size }} {{ extra }}" role="img" aria-label="{{ label or (color ~ ' ' ~ value)|replace('_', ' ') }}">
   {%- if value in GLYPHS %}

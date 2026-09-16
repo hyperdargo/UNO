@@ -11,13 +11,41 @@ from .extensions import csrf, db, login_manager, socketio
 from .security import apply_security_headers
 
 
+def _local_secret_key(instance_path: str) -> str:
+    """Fall back to a key stored beside the database.
+
+    Hosting panels often can't set arbitrary environment variables, and a key
+    regenerated on every boot signs everyone out on every restart. Setting
+    SECRET_KEY is still the better option.
+    """
+    path = os.path.join(instance_path, "secret_key")
+    try:
+        with open(path) as handle:
+            key = handle.read().strip()
+        if key:
+            return key
+    except OSError:
+        pass
+
+    key = secrets.token_hex(32)
+    try:
+        with open(os.open(path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600), "w") as handle:
+            handle.write(key)
+    except OSError:
+        warnings.warn(
+            "SECRET_KEY is not set and instance/secret_key could not be written; "
+            "sessions will reset on restart.",
+            stacklevel=3,
+        )
+    return key
+
+
 def create_app(config: type[Config] = Config) -> Flask:
     app = Flask(__name__, instance_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), "instance"))
     app.config.from_object(config)
-    if not app.config.get("SECRET_KEY"):
-        warnings.warn("SECRET_KEY is not set; using a random key, so sessions reset on restart.", stacklevel=2)
-        app.config["SECRET_KEY"] = secrets.token_hex(32)
     os.makedirs(app.instance_path, exist_ok=True)
+    if not app.config.get("SECRET_KEY"):
+        app.config["SECRET_KEY"] = _local_secret_key(app.instance_path)
 
     db.init_app(app)
     csrf.init_app(app)

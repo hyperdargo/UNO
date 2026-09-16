@@ -41,6 +41,7 @@
           <div class="segmented">
             <input type="radio" name="mode" id="qp-normal" value="normal" checked><label for="qp-normal">Normal</label>
             <input type="radio" name="mode" id="qp-nomercy" value="no_mercy"><label for="qp-nomercy">No Mercy</label>
+            <input type="radio" name="mode" id="qp-flip" value="flip"><label for="qp-flip">Flip</label>
           </div>
         </fieldset>
         <div class="field">
@@ -64,6 +65,7 @@
           <div class="segmented">
             <input type="radio" name="mode" id="ct-normal" value="normal" checked><label for="ct-normal">Normal</label>
             <input type="radio" name="mode" id="ct-nomercy" value="no_mercy"><label for="ct-nomercy">No Mercy</label>
+            <input type="radio" name="mode" id="ct-flip" value="flip"><label for="ct-flip">Flip</label>
           </div>
         </fieldset>
         <div class="panel__row">
@@ -128,6 +130,7 @@
           <div class="discard__stack" id="discard-stack"></div>
           <span class="visually-hidden" id="discard-label"></span>
         </div>
+        <div class="under" id="under-card" hidden></div>
         <div class="pending" id="pending" hidden><span class="pending__value" id="pending-value"></span><span class="pending__label">stacked</span></div>
       </div>
       <p class="table__status" id="status" aria-live="polite"></p>
@@ -167,12 +170,7 @@
   <form method="dialog" class="dialog__body">
     <h2 id="color-title">Pick a color</h2>
     <p class="dialog__lede" id="color-lede"></p>
-    <div class="swatches">
-      <button class="swatch swatch--red" value="red">Red</button>
-      <button class="swatch swatch--yellow" value="yellow">Yellow</button>
-      <button class="swatch swatch--green" value="green">Green</button>
-      <button class="swatch swatch--blue" value="blue">Blue</button>
-    </div>
+    <div class="swatches" id="swatches"></div>
     <button class="btn btn--ghost dialog__cancel" value="cancel" id="color-cancel">Cancel</button>
   </form>
 </dialog>

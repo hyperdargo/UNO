@@ -9,7 +9,18 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, field
 
-from .cards import COLORS, KNOCKOUT_POINTS, NO_MERCY, NORMAL, Card, build_deck
+from .cards import (
+    COLORS,
+    DARK,
+    DARK_COLORS,
+    FLIP,
+    KNOCKOUT_POINTS,
+    LIGHT,
+    NO_MERCY,
+    NORMAL,
+    Card,
+    build_deck,
+)
 
 HAND_SIZE = 7
 MERCY_LIMIT = 25
@@ -40,7 +51,7 @@ class Game:
     rng: random.Random = field(default_factory=random.Random)
 
     def __post_init__(self) -> None:
-        if self.mode not in (NORMAL, NO_MERCY):
+        if self.mode not in (NORMAL, NO_MERCY, FLIP):
             raise ValueError(f"unknown mode {self.mode!r}")
         if not 2 <= len(self.players) <= 10:
             raise ValueError("a game needs between 2 and 10 players")
@@ -53,6 +64,7 @@ class Game:
         self.draw_pile: list[Card] = build_deck(self.mode, self.rng)
         self.discard: list[Card] = []
         self.direction = 1
+        self.side = LIGHT if self.mode == FLIP else None  # UNO Flip starts on the light side
         self.turn = 0
         self.turn_counter = 0
         self.active_color: str | None = None
@@ -84,6 +96,20 @@ class Game:
     @property
     def is_no_mercy(self) -> bool:
         return self.mode == NO_MERCY
+
+    @property
+    def is_flip(self) -> bool:
+        return self.mode == FLIP
+
+    @property
+    def colors(self) -> tuple[str, ...]:
+        """The colors currently in play."""
+        return DARK_COLORS if self.side == DARK else COLORS
+
+    @property
+    def other_colors(self) -> tuple[str, ...]:
+        """The colors on the hidden side (UNO Flip)."""
+        return COLORS if self.side == DARK else DARK_COLORS
 
     @property
     def top(self) -> Card:
@@ -212,8 +238,19 @@ class Game:
             if self.drawn_card_id:
                 raise GameError("You can only play the card you just drew.")
             raise GameError("That card doesn't match the color or symbol in play.")
-        if card.is_wild and color not in COLORS:
+        if card.is_wild and color not in self.colors:
             raise GameError("Pick a color for your wild card.")
+
+        # A Flip card turns the discard pile over, so the card underneath comes
+        # up. Everyone can see that face already; if it is a wild, the player
+        # flipping names the color.
+        flip_color = None
+        if self.is_flip and card.value == "flip":
+            revealed = self.discard[0]
+            if revealed.alt_value in ("wild", "wild_draw2", "wild_draw_color"):
+                if color not in (DARK_COLORS if self.side == LIGHT else COLORS):
+                    raise GameError("A wild comes up when the pile turns over. Pick the color to continue with.")
+                flip_color = color
 
         swap_with = None
         if self.is_no_mercy and card.value == "7":
@@ -258,6 +295,8 @@ class Game:
 
         if self.is_no_mercy:
             self._apply_no_mercy(player, card, swap_with)
+        elif self.is_flip:
+            self._apply_flip(player, card, flip_color)
         else:
             self._apply_normal(card)
 
@@ -319,6 +358,77 @@ class Game:
             self._emit("roulette", f"{self.current_player()} must spin Color Roulette.", player=self.current_player())
         else:
             self._advance(1)
+
+    def _apply_flip(self, player: str, card: Card, flip_color: str | None) -> None:
+        two_players = len(self.players) == 2
+        value = card.value
+
+        if value == "flip":
+            self.turn_deck_over(flip_color)
+            self._advance(1)
+        elif value == "wild_draw_color":
+            victim = self.next_player()
+            got = self._draw_until_color(victim, self.active_color)
+            self._emit(
+                "draw",
+                f"{victim} drew {got} card(s) looking for {self.active_color} and was skipped.",
+                player=victim,
+                count=got,
+            )
+            self._advance(2)
+        elif card.draw_value:
+            victim = self.next_player()
+            got = self._give(victim, card.draw_value)
+            self._emit("draw", f"{victim} drew {got} and was skipped.", player=victim, count=got)
+            self._advance(2)
+        elif value == "skip":
+            self._emit("skip", f"{self.next_player()} was skipped.", player=self.next_player())
+            self._advance(2)
+        elif value == "skip_all":
+            self._emit("skip_all", f"{player} skipped everyone and goes again.", player=player)
+            self._advance(0)
+        elif value == "reverse":
+            self.direction *= -1
+            self._emit("reverse", "Direction reversed.", direction=self.direction)
+            self._advance(2 if two_players else 1)
+        else:
+            self._advance(1)
+
+    def turn_deck_over(self, color: str | None = None) -> None:
+        """Flip the discard pile, the draw pile and every hand to the other side."""
+        self.side = DARK if self.side == LIGHT else LIGHT
+
+        # Turning the pile over puts the card just played on the bottom.
+        self.discard.reverse()
+        self.draw_pile.reverse()
+        for card in self.discard:
+            card.turn_over()
+        for card in self.draw_pile:
+            card.turn_over()
+        for hand in self.hands.values():
+            for card in hand:
+                card.turn_over()
+
+        self.active_color = color if self.top.is_wild else self.top.color
+        self._emit(
+            "flip",
+            f"The deck flipped to the {self.side} side. {describe(self.top)} is now in play.",
+            side=self.side,
+            card=self.top.to_dict(),
+            color=self.active_color,
+        )
+
+    def _draw_until_color(self, player: str, color: str) -> int:
+        """Wild Draw Color: keep dealing until the named color turns up."""
+        got = 0
+        limit = len(self.draw_pile) + len(self.discard) + 1
+        while got < limit:
+            if self._give(player, 1) == 0:
+                break
+            got += 1
+            if self.hands[player][-1].color == color:
+                break
+        return got
 
     def _reset_uno_after_swap(self) -> None:
         self.uno_safe.clear()
@@ -468,7 +578,7 @@ class Game:
         self.winner = winner
         self.pending_draw = self.pending_min = 0
         remaining = sorted((p for p in self.players if p != winner), key=lambda p: len(self.hands[p]))
-        points = sum(c.points for p in remaining for c in self.hands[p])
+        points = sum(c.points(self.mode) for p in remaining for c in self.hands[p])
         if self.is_no_mercy:
             points += KNOCKOUT_POINTS * sum(1 for r in self.out if r.outcome == "knocked_out")
         self.points = points
@@ -487,6 +597,10 @@ class Game:
         out_names = {r.name: r.outcome for r in self.out}
         return {
             "mode": self.mode,
+            "side": self.side,
+            # In UNO Flip you hold your cards facing you, so everyone else can
+            # read the backs of your hand — and you can't read your own.
+            "under_card": self.discard[0].alt_dict() if self.is_flip and self.discard[0].two_sided else None,
             "phase": self.phase,
             "turn_counter": self.turn_counter,
             "current": current,
@@ -504,6 +618,11 @@ class Game:
                     "status": "playing" if p in self.hands else out_names.get(p, "left"),
                     "uno_vulnerable": p in self.uno_vulnerable,
                     "uno_safe": p in self.uno_safe,
+                    "backs": (
+                        [c.alt_dict() for c in self.hands[p]]
+                        if self.is_flip and p != viewer and p in self.hands
+                        else []
+                    ),
                 }
                 for p in self.seating
             ],
@@ -524,6 +643,11 @@ class Game:
 
 LABELS = {
     "skip": "Skip",
+    "draw1": "Draw One",
+    "draw5": "Draw Five",
+    "flip": "Flip",
+    "wild_draw2": "Wild Draw Two",
+    "wild_draw_color": "Wild Draw Color",
     "reverse": "Reverse",
     "draw2": "Draw 2",
     "draw4": "Draw 4",

@@ -1,6 +1,6 @@
-# UNO — Normal &amp; No Mercy
+# UNO — Normal, No Mercy &amp; Flip
 
-A real-time, browser-based UNO game for 2–10 players, with bots to fill empty seats. Two rule sets: **Normal** (the classic 108-card game) and **No Mercy** (the 168-card deck with stacking draw cards, hand swaps and the 25-card knockout).
+A real-time, browser-based UNO game for 2–10 players, with bots to fill empty seats. Three rule sets: **Normal** (the classic 108-card game), **No Mercy** (the 168-card deck with stacking draw cards, hand swaps and the 25-card knockout) and **Flip** (the 112-card double-sided deck that turns the whole table over mid-game).
 
 Built with Flask, Socket.IO and vanilla JavaScript — no build step, no front-end framework, no CDN.
 
@@ -11,11 +11,12 @@ Built with Flask, Socket.IO and vanilla JavaScript — no build step, no front-e
 ## Contents
 
 - [Features](#features)
-- [The two modes](#the-two-modes)
+- [The three modes](#the-three-modes)
 - [House rules and decisions](#house-rules-and-decisions)
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Deployment](#deployment)
+- [Running on a game panel (Pterodactyl)](#running-on-a-game-panel-pterodactyl)
 - [Project structure](#project-structure)
 - [How it works](#how-it-works)
 - [Socket API](#socket-api)
@@ -30,7 +31,7 @@ Built with Flask, Socket.IO and vanilla JavaScript — no build step, no front-e
 
 ## Features
 
-- **Two rule sets.** Normal and No Mercy, chosen per table. Every rule is enforced server-side.
+- **Three rule sets.** Normal, No Mercy and Flip, chosen per table. Every rule is enforced server-side.
 - **Multiplayer tables.** 2–10 seats, public tables in the lobby or private tables joined with a code or invite link.
 - **Bots.** Fill any seat with a bot, or use *Play against bots* to start a solo game instantly. Bots evaluate their hand, hold wilds back, punish short-handed opponents and sometimes catch you for forgetting to call UNO.
 - **Turn timer.** 15, 30 or 60 seconds per table. When it runs out, the server makes a legal move so the table keeps moving.
@@ -44,23 +45,30 @@ Built with Flask, Socket.IO and vanilla JavaScript — no build step, no front-e
 |---|---|---|
 | ![Lobby](docs/screenshots/lobby.png) | ![No Mercy stack](docs/screenshots/stack.png) | ![Mobile table](docs/screenshots/mobile.png) |
 
+UNO Flip's dark side. The small cards under each opponent are the faces they cannot see — and yours are showing to them:
+
+![The dark side](docs/screenshots/flip-dark.png)
+
 ---
 
-## The two modes
+## The three modes
 
-| | Normal | No Mercy |
-|---|---|---|
-| Deck | 108 cards | 168 cards |
-| Can't play? | Draw one card. Play it if it fits, or pass. | Keep drawing until something fits, then play it. |
-| Draw cards | +2 and Wild +4 hit the next player, who loses their turn. | +2, +4, +6 and +10 **stack**. Answer with an equal or higher draw card (any color) or take the whole pile. |
-| Sevens and zeros | Ordinary number cards. | A **7** swaps your hand with a player you choose. A **0** passes every hand to the next player. |
-| Extra cards | — | Skip Everyone, Discard All, colored Draw 4, Wild Reverse Draw 4, Wild Draw 6, Wild Draw 10, Wild Color Roulette. |
-| Knockouts | None. | Reach **25 cards** and you're out. The last player standing wins. |
-| Forgot to call UNO? | Anyone can catch you before the next move: draw 2. | Same. |
+| | Normal | No Mercy | Flip |
+|---|---|---|---|
+| Deck | 108 cards | 168 cards | 112 double-sided cards |
+| Can't play? | Draw one card. Play it if it fits, or pass. | Keep drawing until something fits, then play it. | Draw one card. Play it if it fits, or pass. |
+| Draw cards | +2 and Wild +4 hit the next player, who loses their turn. | +2, +4, +6 and +10 **stack**. Answer with an equal or higher draw card (any color) or take the whole pile. | Light side: Draw One and Wild Draw Two. Dark side: Draw Five and Wild Draw Color. |
+| The twist | None. The game you grew up with. | A **7** swaps your hand with a player you choose. A **0** passes every hand to the next player. | A **Flip** card turns the deck, both piles and every hand over onto the dark side — and back again. |
+| Extra cards | — | Skip Everyone, Discard All, colored Draw 4, Wild Reverse Draw 4, Wild Draw 6, Wild Draw 10, Wild Color Roulette. | Flip, Draw One, Draw Five, Skip Everyone, Wild Draw Two, Wild Draw Color. |
+| Hidden information | Card counts only. | Card counts only. | You hold your cards facing you, so **everyone else can read your dark faces** — and you cannot. The underside of the discard pile is public too. |
+| Knockouts | None. | Reach **25 cards** and you are out. The last player standing wins. | None. |
+| Forgot to call UNO? | Anyone can catch you before the next move: draw 2. | Same. | Same. |
 
 **No Mercy deck (168):** 80 number cards (0–9, two per color) · 12 Draw 2 · 8 Draw 4 · 12 Skip · 8 Skip Everyone · 12 Reverse · 12 Discard All · 8 Wild Reverse Draw 4 · 4 Wild Draw 6 · 4 Wild Draw 10 · 8 Wild Color Roulette.
 
 **Normal deck (108):** one 0 and two each of 1–9, Skip, Reverse and Draw 2 per color, plus 4 Wild and 4 Wild Draw 4.
+
+**Flip deck (112 double-sided):** every card carries a light face and a dark face. Each side has, per color, two each of 1–9 (no zeros), two Reverse, two Flip, two of that side's penalty card (Draw One / Draw Five) and two Skip (light) or Skip Everyone (dark), plus 4 Wild and 4 Wild Draw Two (light) or Wild Draw Color (dark). Light colors are red, yellow, green and blue; dark colors are pink, teal, orange and purple.
 
 ---
 
@@ -68,13 +76,17 @@ Built with Flask, Socket.IO and vanilla JavaScript — no build step, no front-e
 
 Published rules leave some situations open. These are the choices this implementation makes, all enforced in `app/game/engine.py` and covered by tests:
 
-- **Starting card.** Both modes flip until a number card appears; action cards go back into the deck.
+- **Starting card.** Every mode flips until a number card appears; action cards go back into the deck.
 - **Wild Draw 4 is never challenged.** It can be played at any time (no "only if you have no matching color" check).
 - **Stacking ignores color.** Only the draw value matters: equal or higher.
 - **Wild Reverse Draw 4** flips the direction, then the player who is now next faces the +4 — including in a two-player game.
 - **Color Roulette.** The player who plays it names the color in play; the *next* player names the color they flip for, keeps every revealed card and loses their turn. Wild cards never count as the chosen color.
 - **Calling UNO.** You can call as you play down to your last card, or right after — until the next player acts. Getting caught costs 2 cards.
 - **Scoring.** The winner scores the cards left in every other hand: number cards at face value, colored action cards 20, wilds 50, and in No Mercy 250 per knocked-out player.
+- **Flip pairings.** Mattel does not publish which dark face is printed behind which light face, so the pairing is shuffled fresh for each game.
+- **Turning the deck over** works exactly as printed: the discard pile is flipped (so the Flip card just played ends up at the bottom), then the draw pile, then every hand. The card that was underneath the pile comes up. Everyone can see that face in advance, and if it is a wild, the player flipping names the color.
+- **Flip scoring** uses the rule sheet's table, for the side the round ended on: Draw One 10, Draw Five 20, Reverse 20, Skip 20, Skip Everyone 30, Flip 20, Wild 40, Wild Draw Two 50, Wild Draw Color 60.
+- **The last card.** A round ends the moment a hand is empty; a penalty printed on that final card is not applied.
 - **Leaving.** A player who leaves or is removed has their cards returned to the bottom of the deck; play continues. Last player standing wins.
 - **Ranked stats** only count games with two or more people and no bots. Games against bots are tracked separately so the leaderboard can't be farmed.
 
@@ -104,7 +116,7 @@ Generate a secret key with:
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Without `SECRET_KEY` the app starts with a random key and prints a warning — everyone is signed out on every restart.
+Without `SECRET_KEY` the app generates one and stores it in `instance/secret_key` so sessions survive restarts. Setting it yourself is still better, especially if you ever run more than one instance.
 
 ---
 
@@ -114,7 +126,7 @@ All configuration is environment variables (see `.env.example`):
 
 | Variable | Default | What it does |
 |---|---|---|
-| `SECRET_KEY` | random per boot | Signs session cookies and CSRF tokens. **Set this in production.** |
+| `SECRET_KEY` | generated into `instance/secret_key` | Signs session cookies and CSRF tokens. **Set this in production.** |
 | `DATABASE_URL` | `sqlite:///instance/uno.db` | Any SQLAlchemy URL. |
 | `SECURE_COOKIES` | `false` | Set to `true` when serving over HTTPS. |
 | `PUBLIC_URL` | request host | Canonical URL used in metadata, the sitemap and social previews. |
@@ -159,6 +171,30 @@ Scaling to several processes would need a shared message queue and a room store 
 
 ---
 
+## Running on a game panel (Pterodactyl)
+
+Panels using the generic Python egg clone the repository and run `python app.py`, so there is an `app.py` at the repository root that does the right thing:
+
+- Binds to `0.0.0.0` on the panel's `SERVER_PORT` (falling back to `PORT`, then `25604`).
+- Falls back to a key stored in `instance/secret_key` when `SECRET_KEY` is not set, so players are not signed out on every restart. Set `SECRET_KEY` yourself if your panel allows custom variables.
+- Keeps the SQLite database in `instance/`, which survives restarts but **not** a reinstall. Back that folder up.
+
+Egg settings that work as they come:
+
+| Variable | Value |
+|---|---|
+| `GIT_ADDRESS` | `https://github.com/hyperdargo/UNO` |
+| `BRANCH` | blank (uses `main`) |
+| `PY_FILE` | `app.py` |
+| `REQUIREMENTS_FILE` | `requirements.txt` |
+| `AUTO_UPDATE` | `1` to pull new commits on boot |
+
+Then open the panel's allocated address in a browser. Run **one** instance per game server: rooms live in that process's memory.
+
+**If the page sits on "Connecting to the table server…"**, the proxy in front of your panel is refusing WebSocket upgrades (you'll see `Invalid websocket upgrade` and `GET /socket.io/?...transport=websocket ... 400` in the console). The client falls back to HTTP long-polling automatically, so the game still works; to get WebSockets, forward the `Upgrade` and `Connection` headers in whatever sits in front of the container.
+
+---
+
 ## Project structure
 
 ```
@@ -170,7 +206,7 @@ UNO/
 │   ├── models.py            # User, PlayerStats
 │   ├── security.py          # validation, rate limiting, security headers
 │   ├── game/
-│   │   ├── cards.py         # card model and both decks
+│   │   ├── cards.py         # card model and all three decks
 │   │   ├── engine.py        # the rules: the only place game state changes
 │   │   ├── bots.py          # computer opponents
 │   │   ├── rooms.py         # rooms, turn timers, bot scheduling, presence
@@ -188,6 +224,7 @@ UNO/
 │   ├── make_icons.py        # renders the app icons
 │   └── import_legacy_scores.py
 ├── tests/                   # engine, rooms, HTTP and socket tests
+├── app.py                   # entry point for hosting panels (python app.py)
 ├── run.py                   # development entry point
 ├── Dockerfile
 └── requirements.txt
@@ -245,17 +282,17 @@ All events require an authenticated session. Errors come back as a `toast` event
 
 ```bash
 pip install -r requirements-dev.txt
-pytest -q          # 144 tests
+pytest -q          # 188 tests
 ruff check .
 ```
 
 What's covered:
 
-- **Engine (112 tests):** deck composition, matching, skips, reverses, two-player reverse, draw penalties, UNO calls and catches, scoring, leaving mid-turn, reshuffling, and every No Mercy rule — stacking, draw-until-playable, 7-0, Discard All, Skip Everyone, Color Roulette, and the mercy knockout. Includes 80 complete simulated bot games that assert every game ends, no card is ever created or lost, and nobody exceeds the mercy limit.
+- **Engine (156 tests):** deck composition, matching, skips, reverses, two-player reverse, draw penalties, UNO calls and catches, scoring, leaving mid-turn, reshuffling, and every No Mercy rule — stacking, draw-until-playable, 7-0, Discard All, Skip Everyone, Color Roulette, and the mercy knockout. Flip has its own suite: deck composition checked against the rule sheet, the deck turning over (piles, hands and the card underneath), flipping onto a wild, Draw One, Draw Five, Skip Everyone, Wild Draw Color, per-side scoring, and the hidden-information rule that you cannot read your own backs. Includes 105 complete simulated bot games across all three modes asserting that every game ends, no card is ever created or lost, and nobody exceeds the mercy limit.
 - **Rooms:** creating, joining, private tables, host transfer, kicks, pause freezing the clock, timeout moves, disconnect grace periods, abandoned tables and rematches, all against a fake clock.
 - **Web and sockets:** auth flows, CSRF, login rate limiting, password hashing, security headers, socket authentication, payload validation, hidden-information checks, and a two-player game over real sockets.
 
-Browser verification was run with Playwright against Edge: the landing page at 1440/768/390 px across eleven scroll depths, complete bot games in both modes played through the UI on desktop and mobile, a two-human private table, rematch and leave flows — with zero console errors and no failed requests.
+Browser verification was run with Playwright against Edge: the landing page at 1440/768/390 px across eleven scroll depths, complete bot games in all three modes played through the UI on desktop and mobile, a two-human private table, rematch and leave flows — with zero console errors and no failed requests.
 
 ---
 

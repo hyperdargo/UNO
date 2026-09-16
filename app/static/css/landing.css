@@ -136,8 +136,15 @@ body { overflow-x: hidden; }
 .compare__row--head > span { font-weight: 800; font-size: var(--t-lg); color: var(--paper); }
 .compare__row--head > span:last-child { color: var(--accent); }
 .compare .span-2 { grid-column: span 2; }
+.compare .span-3 { grid-column: span 3; }
+.compare--three .compare__row { grid-template-columns: minmax(110px, 0.6fr) repeat(3, 1fr); gap: var(--s-4); }
+.compare--three .compare__row--head > span:nth-child(4) { color: var(--pink); }
+.guide__sub { font-size: var(--t-xl); margin: var(--s-7) 0 var(--s-5); }
+.guide__sub:first-of-type { margin-top: 0; }
 @media (max-width: 700px) {
-  .compare__row { grid-template-columns: 1fr 1fr; gap: var(--s-2) var(--s-4); }
+  .compare__row, .compare--three .compare__row { grid-template-columns: 1fr 1fr; gap: var(--s-2) var(--s-4); }
+  .compare .span-3 { grid-column: 1 / -1; }
+  .compare--three .compare__row--head > span:nth-child(4) { grid-column: 1 / -1; }
   .compare__row > [role="rowheader"] { grid-column: 1 / -1; }
   .compare__row--head > span:first-child { display: none; }
   .compare .span-2 { grid-column: 1 / -1; }

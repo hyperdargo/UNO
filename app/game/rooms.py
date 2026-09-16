@@ -387,7 +387,7 @@ class RoomManager:
             return
         hand = game.hands[player]
         if game.phase == ROULETTE:
-            game.spin_roulette(player, bots.best_color(hand, room.rng))
+            game.spin_roulette(player, bots.best_color(hand, room.rng, game.colors))
             return
         if game.phase != PLAY:
             return
@@ -399,7 +399,9 @@ class RoomManager:
             game.pass_turn(player)
         else:
             card = next(c for c in hand if c.id == game.drawn_card_id)
-            color = bots.best_color(hand, room.rng) if card.is_wild else None
+            color = bots.best_color(hand, room.rng, game.colors) if card.is_wild else None
+            if game.is_flip and card.value == "flip":
+                color = room.rng.choice(game.other_colors)
             others = [p for p in game.players if p != player]
             target = room.rng.choice(others) if card.value == "7" else None
             game.play(player, card.id, color=color, target=target)
