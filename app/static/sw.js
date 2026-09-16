@@ -1,11 +1,7 @@
 // Caches static assets only. Pages, the API and the socket always hit the network,
 // so a signed-out user never sees a cached signed-in page.
-const CACHE = "uno-static-v2";
-const PRECACHE = [
-  "/static/css/base.css",
-  "/static/vendor/socket.io.min.js",
-  "/static/img/icon-192.png",
-];
+const CACHE = "uno-static-v3";
+const PRECACHE = ["/static/img/icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));

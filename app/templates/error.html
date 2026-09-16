@@ -2,7 +2,7 @@
 {% from "partials/card.html" import back %}
 {% block title %}{{ title }} · UNO{% endblock %}
 {% block meta %}<meta name="robots" content="noindex">{% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ asset('css/auth.css') }}">{% endblock %}
 {% block body %}
 <main id="main" class="auth">
   <div class="auth__panel auth__panel--center">

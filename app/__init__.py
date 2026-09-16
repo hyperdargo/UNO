@@ -2,13 +2,29 @@
 import os
 import secrets
 import warnings
+from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory, url_for
 from flask_wtf.csrf import CSRFError
 
 from .config import Config
 from .extensions import csrf, db, login_manager, socketio
 from .security import apply_security_headers
+
+
+def _build_id(static_folder: str) -> str:
+    """One stamp for the whole asset tree, from the newest file in it.
+
+    Assets are served under /static/v/<build>/..., so a deploy changes every
+    URL at once. That matters behind a CDN: relative imports inside an ES
+    module resolve under the same versioned prefix, so the browser can never
+    mix a new entry point with yesterday's modules.
+    """
+    newest = 0.0
+    for path in Path(static_folder).rglob("*"):
+        if path.is_file():
+            newest = max(newest, path.stat().st_mtime)
+    return str(int(newest))
 
 
 def _local_secret_key(instance_path: str) -> str:
@@ -71,6 +87,19 @@ def create_app(config: type[Config] = Config) -> Flask:
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
     init_sockets(app)
+
+    build = _build_id(app.static_folder)
+
+    @app.get("/static/v/<version>/<path:filename>")
+    def versioned_static(version: str, filename: str):
+        response = send_from_directory(app.static_folder, filename, max_age=app.config["SEND_FILE_MAX_AGE_DEFAULT"])
+        response.headers["Cache-Control"] += ", immutable"
+        return response
+
+    @app.template_global()
+    def asset(filename: str) -> str:
+        """Versioned URL for a static file. Use this instead of url_for('static')."""
+        return url_for("versioned_static", version=build, filename=filename)
 
     app.after_request(apply_security_headers)
 

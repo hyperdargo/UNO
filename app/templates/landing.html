@@ -7,7 +7,7 @@
   <meta property="og:title" content="UNO: Normal, No Mercy &amp; Flip">
   <meta property="og:description" content="Play in your browser with friends or bots. Classic rules, No Mercy with stacking draws, or Flip with its double-sided deck.">
   <meta property="og:url" content="{{ public_url }}/">
-  <meta property="og:image" content="{{ public_url }}{{ url_for('static', filename='img/og-image.png') }}">
+  <meta property="og:image" content="{{ public_url }}{{ asset('img/og-image.png') }}">
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">{{ {
     "@context": "https://schema.org",
@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block styles %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
 {% endblock %}
 
 {% block body %}
@@ -178,5 +178,5 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='js/landing.js') }}" defer></script>
+  <script src="{{ asset('js/landing.js') }}" defer></script>
 {% endblock %}

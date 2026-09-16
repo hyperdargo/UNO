@@ -20,6 +20,9 @@ class Config:
     REMEMBER_COOKIE_SAMESITE = "Lax"
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
 
+    # Static URLs carry a ?v= stamp, so they can be cached hard.
+    SEND_FILE_MAX_AGE_DEFAULT = 60 * 60 * 24 * 30
+
     WTF_CSRF_TIME_LIMIT = None  # token lives as long as the session
     MAX_CONTENT_LENGTH = 16 * 1024
 

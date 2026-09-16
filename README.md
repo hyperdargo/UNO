@@ -169,6 +169,8 @@ location / {
 
 Scaling to several processes would need a shared message queue and a room store outside process memory; that isn't implemented.
 
+**Caching.** Static files are served from `/static/v/<build>/…`, where the build stamp comes from the newest file in `app/static`. Every deploy changes every asset URL at once, including the ES modules imported inside `main.js`, so a CDN or browser can never pair a new page with yesterday's JavaScript. No purge step needed.
+
 ---
 
 ## Running on a game panel (Pterodactyl)
@@ -191,7 +193,15 @@ Egg settings that work as they come:
 
 Then open the panel's allocated address in a browser. Run **one** instance per game server: rooms live in that process's memory.
 
-**If the page sits on "Connecting to the table server…"**, the proxy in front of your panel is refusing WebSocket upgrades (you'll see `Invalid websocket upgrade` and `GET /socket.io/?...transport=websocket ... 400` in the console). The client falls back to HTTP long-polling automatically, so the game still works; to get WebSockets, forward the `Upgrade` and `Connection` headers in whatever sits in front of the container.
+**If the page sits on "Connecting to the table server…"**, the proxy in front of your panel is refusing WebSocket upgrades. You will see `Invalid websocket upgrade` in the server log and `GET /socket.io/?...transport=websocket ... 400` in the browser console. The client falls back to HTTP long-polling on its own, so the game still works.
+
+To check a domain from the outside:
+
+```bash
+curl "https://your-domain/socket.io/?EIO=4&transport=polling"   # expect 0{"sid":...}
+```
+
+To get WebSockets as well, forward the upgrade headers in whatever sits in front of the container — the nginx block above, `mod_proxy_wstunnel` on Apache, or a Cloudflare tunnel with WebSockets enabled.
 
 ---
 

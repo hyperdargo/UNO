@@ -4,7 +4,7 @@
   <meta name="robots" content="noindex">
   <meta name="username" content="{{ current_user.username }}">
 {% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/play.css') }}">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ asset('css/play.css') }}">{% endblock %}
 {% block body_class %}app{% endblock %}
 
 {% block body %}
@@ -160,7 +160,7 @@
       <ol class="log__list" id="log"></ol>
     </aside>
 
-    <img class="dealer" id="dealer" src="{{ url_for('static', filename='img/dealer.webp') }}" alt="" width="640" height="640" loading="lazy" decoding="async">
+    <img class="dealer" id="dealer" src="{{ asset('img/dealer.webp') }}" alt="" width="640" height="640" loading="lazy" decoding="async">
     <div class="paused" id="paused-banner" hidden><p>Paused by the host</p></div>
   </section>
 </main>
@@ -237,6 +237,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}" defer></script>
-  <script type="module" src="{{ url_for('static', filename='js/play/main.js') }}"></script>
+  <script src="{{ asset('vendor/socket.io.min.js') }}" defer></script>
+  <script type="module" src="{{ asset('js/play/main.js') }}"></script>
 {% endblock %}
