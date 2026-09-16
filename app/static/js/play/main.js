@@ -409,10 +409,20 @@ $("#leave-game").addEventListener("click", async () => {
 });
 
 const logPanel = $("#log-panel");
-$("#log-toggle").addEventListener("click", (event) => {
-  const open = !logPanel.classList.contains("is-open");
+function toggleLog(open) {
   logPanel.classList.toggle("is-open", open);
-  event.currentTarget.setAttribute("aria-expanded", String(open));
+  $("#log-toggle").setAttribute("aria-expanded", String(open));
+}
+$("#log-toggle").addEventListener("click", () => toggleLog(!logPanel.classList.contains("is-open")));
+$("#log-close").addEventListener("click", () => {
+  toggleLog(false);
+  $("#log-toggle").focus();
+});
+// The drawer sits over the table, so tapping the table behind it should dismiss it too.
+document.addEventListener("click", (event) => {
+  if (!logPanel.classList.contains("is-open")) return;
+  if (logPanel.contains(event.target) || event.target.closest("#log-toggle")) return;
+  toggleLog(false);
 });
 
 const chatMenu = $("#chat-menu");
@@ -460,6 +470,7 @@ document.addEventListener("keydown", (event) => {
     $(button).click();
   }
   if (event.key === "Escape" && !chatMenu.hidden) toggleChat(false);
+  if (event.key === "Escape" && logPanel.classList.contains("is-open")) toggleLog(false);
 });
 
 // ---------------------------------------------------------------- results

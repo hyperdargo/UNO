@@ -210,7 +210,10 @@ kbd { font: inherit; font-size: var(--t-xs); opacity: 0.6; border: 1px solid cur
 .hand__card.is-drawn { box-shadow: 0 0 0 3px var(--accent); }
 
 .log { grid-area: log; display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--rule); background: rgba(10, 31, 34, 0.6); padding: var(--s-4); }
-.log h2 { font-size: var(--t-md); margin-bottom: var(--s-3); }
+.log__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-3); }
+.log h2 { font-size: var(--t-md); }
+/* On wide screens the log is a column, not a drawer, so it needs no close button. */
+.log__close { display: none; }
 .log__list { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: grid; gap: var(--s-2); font-size: var(--t-sm); color: var(--paper-dim); align-content: start; }
 .log__list li:last-child { color: var(--paper); }
 
@@ -236,6 +239,8 @@ kbd { font: inherit; font-size: var(--t-xs); opacity: 0.6; border: 1px solid cur
   #log-toggle { display: inline-flex; }
   .log { position: absolute; right: 0; top: 0; bottom: 0; width: min(320px, 90%); z-index: 9; transform: translateX(100%); transition: transform 240ms var(--ease-out); border-left: 1px solid var(--rule); background: var(--felt-deep); }
   .log.is-open { transform: none; }
+  /* The open drawer covers the bar underneath, so it carries its own close button. */
+  .log__close { display: inline-flex; }
   .dealer { right: 0; }
 }
 @media (max-width: 700px) {
