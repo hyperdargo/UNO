@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}UNO: Normal &amp; No Mercy{% endblock %}</title>
+  <meta name="description" content="{% block description %}Play UNO in your browser with friends or bots. Classic rules or No Mercy: stacking draws, 7-0 swaps and the 25-card knockout.{% endblock %}">
+  <meta name="theme-color" content="#0f2a2e">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  {% block meta %}{% endblock %}
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="any">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block styles %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  {% include "partials/glyphs.html" %}
+  {% block body %}{% endblock %}
+  {% block scripts %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/sw-register.js') }}" defer></script>
+</body>
+</html>

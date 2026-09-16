@@ -1,0 +1,15 @@
+{
+  "name": "UNO: Normal & No Mercy",
+  "short_name": "UNO",
+  "description": "Play UNO in your browser with friends or bots.",
+  "start_url": "/play",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f2a2e",
+  "theme_color": "#0f2a2e",
+  "icons": [
+    { "src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/static/img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "partials/card.html" import card %}
+{% block title %}{{ "Create an account" if mode == "signup" else "Sign in" }} · UNO{% endblock %}
+{% block meta %}<meta name="robots" content="noindex">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+
+{% block body %}
+<main id="main" class="auth">
+  <a class="auth__back" href="{{ url_for('main.index') }}">Back to the home page</a>
+
+  <div class="auth__panel">
+    <div class="auth__cards" aria-hidden="true">
+      {{ card("blue", "5", "s") }}{{ card("wild", "wild", "s") }}{{ card("red", "draw2", "s") }}
+    </div>
+
+    <div class="auth__tabs segmented" role="tablist" aria-label="Account">
+      <input type="radio" name="auth-mode" id="tab-login" value="login" {% if mode != "signup" %}checked{% endif %}>
+      <label for="tab-login">Sign in</label>
+      <input type="radio" name="auth-mode" id="tab-signup" value="signup" {% if mode == "signup" %}checked{% endif %}>
+      <label for="tab-signup">Create account</label>
+    </div>
+
+    <h1 class="auth__title" id="auth-title">{{ "Create your account" if mode == "signup" else "Welcome back" }}</h1>
+
+    <form id="auth-form" class="auth__form" novalidate data-mode="{{ mode }}">
+      <div class="field">
+        <label for="username">Username</label>
+        <input class="input" id="username" name="username" autocomplete="username" required minlength="3" maxlength="20"
+               pattern="[A-Za-z0-9_]{3,20}" aria-describedby="username-hint" autocapitalize="off" spellcheck="false">
+        <p class="hint" id="username-hint">3–20 letters, numbers or underscores. Other players see this.</p>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input class="input" id="password" name="password" type="password" required minlength="8" maxlength="128"
+               autocomplete="{{ 'new-password' if mode == 'signup' else 'current-password' }}" aria-describedby="password-hint">
+        <p class="hint" id="password-hint">At least 8 characters.</p>
+      </div>
+      <p class="auth__error" id="auth-error" role="alert" aria-live="assertive"></p>
+      <button class="btn btn--primary btn--big" type="submit" id="auth-submit">{{ "Create account" if mode == "signup" else "Sign in" }}</button>
+    </form>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>{% endblock %}

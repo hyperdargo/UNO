@@ -1,0 +1,9 @@
+.venv/
+legacy/
+instance/
+tests/
+.github/
+node_modules/
+__pycache__/
+*.db
+.env

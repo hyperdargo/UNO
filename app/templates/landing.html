@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% from "partials/card.html" import card, back %}
+
+{% block meta %}
+  <link rel="canonical" href="{{ public_url }}/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="UNO: Normal &amp; No Mercy">
+  <meta property="og:description" content="Play in your browser with friends or bots. Classic rules, or No Mercy with stacking draws and the 25-card knockout.">
+  <meta property="og:url" content="{{ public_url }}/">
+  <meta property="og:image" content="{{ public_url }}{{ url_for('static', filename='img/og-image.png') }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{{ {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "UNO: Normal & No Mercy (fan-made)",
+    "url": public_url ~ "/",
+    "applicationCategory": "Game",
+    "gamePlatform": "Web browser",
+    "playMode": ["MultiPlayer", "SinglePlayer"],
+    "numberOfPlayers": {"@type": "QuantitativeValue", "minValue": 2, "maxValue": 10}
+  }|tojson }}</script>
+{% endblock %}
+
+{% block styles %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block body %}
+<header class="site-header">
+  <a class="wordmark" href="{{ url_for('main.index') }}" aria-label="UNO home">
+    <span class="wordmark__pips" aria-hidden="true"><i></i><i></i><i></i><i></i></span>UNO
+  </a>
+  <nav class="site-nav" aria-label="Primary">
+    <a href="#modes">Modes</a>
+    <a href="#cards">Card guide</a>
+    {% if current_user.is_authenticated %}
+      <a class="btn btn--primary btn--small" href="{{ url_for('main.play') }}">Open the lobby</a>
+    {% else %}
+      <a class="site-nav__signin" href="{{ url_for('auth.login_page') }}">Sign in</a>
+      <a class="btn btn--primary btn--small" href="{{ url_for('auth.login_page', mode='signup') }}">Play free</a>
+    {% endif %}
+  </nav>
+</header>
+
+<main id="main">
+  <!-- Hero: deliberate stillness. The hand is dealt; the page waits for you. -->
+  <section class="hero">
+    <div class="hero__copy">
+      <h1>Match the color.<br>Empty your hand.<br>Show no mercy.</h1>
+      <p class="hero__lede">The card game you already know, in your browser. Open a table for friends, or fill the seats with bots and play right now.</p>
+      <div class="hero__actions">
+        {% if current_user.is_authenticated %}
+          <a class="btn btn--primary btn--big" href="{{ url_for('main.play') }}">Open the lobby</a>
+        {% else %}
+          <a class="btn btn--primary btn--big" href="{{ url_for('auth.login_page', mode='signup') }}">Play free</a>
+        {% endif %}
+        <a class="btn btn--ghost btn--big" href="#modes">Compare the modes</a>
+      </div>
+    </div>
+    <div class="hero__hand" aria-label="A dealt hand of seven cards" role="img">
+      {{ card("red", "7", "l", extra="fan") }}
+      {{ card("yellow", "skip", "l", extra="fan") }}
+      {{ card("green", "3", "l", extra="fan") }}
+      {{ card("wild", "wild", "l", extra="fan") }}
+      {{ card("blue", "reverse", "l", extra="fan") }}
+      {{ card("red", "draw2", "l", extra="fan") }}
+      {{ card("wild", "wild_draw10", "l", extra="fan") }}
+    </div>
+  </section>
+
+  <!-- Signature: the scroll wheel builds a No Mercy stack until someone is knocked out. -->
+  <section class="stack" id="stack" aria-labelledby="stack-title">
+    <div class="stack__stage">
+      <div class="stack__copy">
+        <h2 id="stack-title">In No Mercy, draw cards stack.</h2>
+        <ol class="stack__steps">
+          <li data-step="0">Ada plays <strong>+2</strong>.</li>
+          <li data-step="1">Grace answers with <strong>+4</strong>. Equal or higher, any color.</li>
+          <li data-step="2">Alan throws <strong>+6</strong> on top.</li>
+          <li data-step="3">You land the <strong>+10</strong>. Linus has nothing to stack.</li>
+          <li data-step="4">Linus held 3 cards. Now he holds 25, and the Mercy Rule knocks him out.</li>
+        </ol>
+      </div>
+
+      <div class="stack__table" aria-hidden="true">
+        <div class="stack__pile">
+          {{ back("l", extra="stack__base") }}
+          {{ card("blue", "draw2", "l", extra="stack__card") }}
+          {{ card("green", "draw4", "l", extra="stack__card") }}
+          {{ card("wild", "wild_draw6", "l", extra="stack__card") }}
+          {{ card("wild", "wild_draw10", "l", extra="stack__card") }}
+        </div>
+        <div class="stack__total"><span class="stack__plus">+</span><span id="stack-count">22</span></div>
+        <div class="stack__meter">
+          <div class="stack__meter-label"><span>Linus's hand</span><span><span id="hand-count">25</span> / 25</span></div>
+          <div class="stack__slots">{% for i in range(25) %}<i></i>{% endfor %}</div>
+          <p class="stack__out">Knocked out</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modes: a calm, factual comparison. -->
+  <section class="modes" id="modes" aria-labelledby="modes-title">
+    <div class="section-head">
+      <h2 id="modes-title">Two ways to play</h2>
+      <p>Pick the mode when you open a table. Everyone at the table plays the same rules.</p>
+    </div>
+    <div class="compare" role="table" aria-label="Normal and No Mercy rules compared">
+      <div class="compare__row compare__row--head" role="row">
+        <span role="columnheader"><span class="visually-hidden">Rule</span></span>
+        <span role="columnheader">Normal</span>
+        <span role="columnheader">No Mercy</span>
+      </div>
+      <div class="compare__row" role="row"><span role="rowheader">Deck</span><span role="cell">108 cards</span><span role="cell">168 cards</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Can't play?</span><span role="cell">Draw one. Play it if it fits, or pass.</span><span role="cell">Keep drawing until something fits, then play it.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Draw cards</span><span role="cell">+2 and +4 hit the next player, who loses their turn.</span><span role="cell">+2, +4, +6 and +10 stack. Answer with an equal or bigger draw card, or take the whole pile.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Sevens and zeros</span><span role="cell">Ordinary number cards.</span><span role="cell">A 7 swaps your hand with a player you pick. A 0 passes every hand along.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Knockouts</span><span role="cell">None. Play until someone goes out.</span><span role="cell">Reach 25 cards and you're out. Last player standing also wins.</span></div>
+      <div class="compare__row" role="row"><span role="rowheader">Forgot to call UNO?</span><span role="cell" class="span-2">Anyone who catches you before the next move makes you draw 2.</span></div>
+    </div>
+  </section>
+
+  <!-- Card guide: reference, no motion. -->
+  <section class="guide" id="cards" aria-labelledby="cards-title">
+    <div class="section-head">
+      <h2 id="cards-title">The cards only No Mercy has</h2>
+      <p>Everything from the classic deck is still here. These are added on top.</p>
+    </div>
+    <ul class="guide__list">
+      <li>{{ card("green", "skip_all", "s") }}<div><h3>Skip Everyone</h3><p>Every other player is skipped. You go again.</p></div></li>
+      <li>{{ card("yellow", "discard_all", "s") }}<div><h3>Discard All</h3><p>Play it and throw out every other card of that color with it.</p></div></li>
+      <li>{{ card("blue", "draw4", "s") }}<div><h3>Draw 4</h3><p>A colored +4. Matches like any colored card and stacks.</p></div></li>
+      <li>{{ card("wild", "wild_reverse_draw4", "s", label="wild reverse draw 4") }}<div><h3>Wild Reverse Draw 4</h3><p>Flips the direction, then the new next player faces +4.</p></div></li>
+      <li>{{ card("wild", "wild_draw6", "s") }}<div><h3>Wild Draw 6</h3><p>Pick a color. Next player stacks or draws 6.</p></div></li>
+      <li>{{ card("wild", "wild_draw10", "s") }}<div><h3>Wild Draw 10</h3><p>The biggest draw in the deck. Nothing smaller can answer it.</p></div></li>
+      <li>{{ card("wild", "wild_roulette", "s") }}<div><h3>Color Roulette</h3><p>The next player names a color and flips cards until it shows up. They keep every card flipped.</p></div></li>
+    </ul>
+  </section>
+
+  <!-- How a table works: a real three-step sequence. -->
+  <section class="tables" aria-labelledby="tables-title">
+    <h2 id="tables-title">Getting a game going</h2>
+    <ol class="tables__steps">
+      <li><h3>Open a table</h3><p>Name it, choose Normal or No Mercy, and set a 15, 30 or 60 second turn timer.</p></li>
+      <li><h3>Fill the seats</h3><p>Friends join from the lobby or with your private table code. Empty seats take bots. Up to 10 players.</p></li>
+      <li><h3>Deal</h3><p>Refresh or lose signal and your seat waits for you. If your timer runs out, a move is made so the table keeps going.</p></li>
+    </ol>
+  </section>
+
+  <section class="closer">
+    <h2>Your seat is open.</h2>
+    {% if current_user.is_authenticated %}
+      <a class="btn btn--primary btn--big" href="{{ url_for('main.play') }}">Open the lobby</a>
+    {% else %}
+      <a class="btn btn--primary btn--big" href="{{ url_for('auth.login_page', mode='signup') }}">Play free</a>
+    {% endif %}
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>A fan-made, open-source project. Not affiliated with, endorsed by or sponsored by Mattel. UNO is a trademark of Mattel, Inc.</p>
+  <p><a href="https://github.com/hyperdargo/UNO" rel="noopener">Source on GitHub</a></p>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/landing.js') }}" defer></script>
+{% endblock %}

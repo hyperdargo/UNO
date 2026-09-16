@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Lobby · UNO{% endblock %}
+{% block meta %}
+  <meta name="robots" content="noindex">
+  <meta name="username" content="{{ current_user.username }}">
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/play.css') }}">{% endblock %}
+{% block body_class %}app{% endblock %}
+
+{% block body %}
+<header class="app-bar">
+  <a class="wordmark" href="{{ url_for('main.index') }}" aria-label="UNO home page">
+    <span class="wordmark__pips" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="wordmark__text">UNO</span>
+  </a>
+  <p class="app-bar__stats" id="stats" aria-live="polite"></p>
+  <nav class="app-bar__actions" aria-label="Account">
+    <button class="btn btn--ghost btn--small" type="button" data-open="leaderboard-dialog">Leaderboard</button>
+    <button class="btn btn--ghost btn--small" type="button" data-open="settings-dialog">Settings</button>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--ghost btn--small" type="submit">Sign out <span class="visually-hidden">{{ current_user.username }}</span></button>
+    </form>
+  </nav>
+</header>
+
+<div class="conn-banner" id="conn-banner" role="status" hidden>Connection lost. Reconnecting…</div>
+
+<main id="main" class="app-main">
+  <p class="booting" id="booting">Connecting to the table server…</p>
+
+  <!-- Lobby -->
+  <section class="view lobby" id="view-lobby" aria-labelledby="lobby-title" hidden>
+    <div class="lobby__start">
+      <h1 id="lobby-title">Hi {{ current_user.username }}. Deal yourself in.</h1>
+
+      <form class="panel" id="quick-form">
+        <h2>Play against bots</h2>
+        <p class="panel__lede">Starts straight away at a private table.</p>
+        <fieldset class="field">
+          <legend class="field__label">Mode</legend>
+          <div class="segmented">
+            <input type="radio" name="mode" id="qp-normal" value="normal" checked><label for="qp-normal">Normal</label>
+            <input type="radio" name="mode" id="qp-nomercy" value="no_mercy"><label for="qp-nomercy">No Mercy</label>
+          </div>
+        </fieldset>
+        <div class="field">
+          <label for="qp-bots">Bots</label>
+          <select class="select" id="qp-bots" name="bots">
+            <option value="1">1 bot</option><option value="2">2 bots</option>
+            <option value="3" selected>3 bots</option><option value="4">4 bots</option><option value="5">5 bots</option>
+          </select>
+        </div>
+        <button class="btn btn--primary btn--big" type="submit">Deal me in</button>
+      </form>
+
+      <form class="panel" id="create-form">
+        <h2>Open a table for friends</h2>
+        <div class="field">
+          <label for="ct-name">Table name</label>
+          <input class="input" id="ct-name" name="name" maxlength="40" autocomplete="off" placeholder="{{ current_user.username }}'s table">
+        </div>
+        <fieldset class="field">
+          <legend class="field__label">Mode</legend>
+          <div class="segmented">
+            <input type="radio" name="mode" id="ct-normal" value="normal" checked><label for="ct-normal">Normal</label>
+            <input type="radio" name="mode" id="ct-nomercy" value="no_mercy"><label for="ct-nomercy">No Mercy</label>
+          </div>
+        </fieldset>
+        <div class="panel__row">
+          <div class="field">
+            <label for="ct-timer">Turn timer</label>
+            <select class="select" id="ct-timer" name="turn_seconds">
+              <option value="15">15 seconds</option><option value="30" selected>30 seconds</option><option value="60">60 seconds</option>
+            </select>
+          </div>
+          <label class="check"><input type="checkbox" name="private" id="ct-private"> Private (join by code only)</label>
+        </div>
+        <button class="btn btn--big" type="submit">Open table</button>
+      </form>
+    </div>
+
+    <div class="lobby__tables">
+      <div class="lobby__tables-head">
+        <h2>Open tables</h2>
+        <form class="code-form" id="code-form">
+          <label class="visually-hidden" for="code-input">Table code</label>
+          <input class="input" id="code-input" name="code" placeholder="Table code" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button class="btn btn--small" type="submit">Join</button>
+        </form>
+      </div>
+      <ul class="table-list" id="table-list" aria-live="polite"></ul>
+      <p class="empty" id="table-empty">No open tables right now. Open one and send your friends the code.</p>
+    </div>
+  </section>
+
+  <!-- Waiting room -->
+  <section class="view waiting" id="view-waiting" aria-labelledby="waiting-title" hidden>
+    <div class="waiting__head">
+      <p class="badge" id="waiting-mode"></p>
+      <h1 id="waiting-title"></h1>
+      <p class="waiting__meta" id="waiting-meta"></p>
+      <div class="waiting__code">
+        <span>Table code</span><code id="waiting-code"></code>
+        <button class="btn btn--small" type="button" id="copy-code">Copy invite link</button>
+      </div>
+    </div>
+    <ol class="seat-list" id="seat-list"></ol>
+    <div class="waiting__actions">
+      <button class="btn btn--danger" type="button" id="leave-waiting">Leave table</button>
+      <button class="btn" type="button" id="add-bot" hidden>Add a bot</button>
+      <button class="btn btn--primary btn--big" type="button" id="start-game" hidden>Start game</button>
+      <p class="hint" id="waiting-hint"></p>
+    </div>
+  </section>
+
+  <!-- Game table -->
+  <section class="view table" id="view-table" aria-label="Game table" hidden>
+    <div class="table__seats" id="seats" role="list" aria-label="Players"></div>
+
+    <div class="table__center">
+      <div class="table__piles">
+        <button class="pile pile--draw" type="button" id="draw-pile" aria-describedby="draw-count">
+          <span class="card card--back card--l" aria-hidden="true"><span class="card__mark">UNO</span></span>
+          <span class="pile__label" id="draw-count"></span>
+        </button>
+        <div class="pile pile--discard" id="discard" aria-live="polite">
+          <div class="discard__ring" id="color-ring" aria-hidden="true"></div>
+          <div class="discard__stack" id="discard-stack"></div>
+          <span class="visually-hidden" id="discard-label"></span>
+        </div>
+        <div class="pending" id="pending" hidden><span class="pending__value" id="pending-value"></span><span class="pending__label">stacked</span></div>
+      </div>
+      <p class="table__status" id="status" aria-live="polite"></p>
+      <div class="callout" id="callout" aria-hidden="true"></div>
+    </div>
+
+    <div class="table__me">
+      <div class="table__bar">
+        <div class="table__tools">
+          <button class="btn btn--ghost btn--small" type="button" id="chat-toggle" aria-expanded="false" aria-controls="chat-menu">Quick chat</button>
+          <button class="btn btn--ghost btn--small" type="button" id="log-toggle" aria-expanded="false" aria-controls="log-panel">Table log</button>
+          <button class="btn btn--ghost btn--small" type="button" id="pause-game" hidden>Pause</button>
+          <button class="btn btn--ghost btn--small" type="button" id="leave-game">Leave</button>
+        </div>
+        <div class="table__actions">
+          <button class="btn" type="button" id="btn-draw" hidden>Draw <kbd>D</kbd></button>
+          <button class="btn" type="button" id="btn-pass" hidden>Keep it and pass <kbd>P</kbd></button>
+          <button class="btn btn--uno" type="button" id="btn-uno" hidden>Call UNO <kbd>U</kbd></button>
+        </div>
+      </div>
+      <div class="chat-menu" id="chat-menu" hidden></div>
+      <div class="hand" id="hand" role="list" aria-label="Your hand"></div>
+    </div>
+
+    <aside class="log" id="log-panel" aria-labelledby="log-title">
+      <h2 id="log-title">Table log</h2>
+      <ol class="log__list" id="log"></ol>
+    </aside>
+
+    <img class="dealer" id="dealer" src="{{ url_for('static', filename='img/dealer.webp') }}" alt="" width="640" height="640" loading="lazy" decoding="async">
+    <div class="paused" id="paused-banner" hidden><p>Paused by the host</p></div>
+  </section>
+</main>
+
+<!-- Dialogs -->
+<dialog class="dialog" id="color-dialog" aria-labelledby="color-title">
+  <form method="dialog" class="dialog__body">
+    <h2 id="color-title">Pick a color</h2>
+    <p class="dialog__lede" id="color-lede"></p>
+    <div class="swatches">
+      <button class="swatch swatch--red" value="red">Red</button>
+      <button class="swatch swatch--yellow" value="yellow">Yellow</button>
+      <button class="swatch swatch--green" value="green">Green</button>
+      <button class="swatch swatch--blue" value="blue">Blue</button>
+    </div>
+    <button class="btn btn--ghost dialog__cancel" value="cancel" id="color-cancel">Cancel</button>
+  </form>
+</dialog>
+
+<dialog class="dialog" id="target-dialog" aria-labelledby="target-title">
+  <form method="dialog" class="dialog__body">
+    <h2 id="target-title">Swap hands with…</h2>
+    <p class="dialog__lede">You'll take their cards and they'll take yours.</p>
+    <div class="targets" id="targets"></div>
+    <button class="btn btn--ghost dialog__cancel" value="cancel">Cancel</button>
+  </form>
+</dialog>
+
+<dialog class="dialog" id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog" class="dialog__body">
+    <h2 id="confirm-title"></h2>
+    <p class="dialog__lede" id="confirm-lede"></p>
+    <div class="dialog__actions">
+      <button class="btn btn--ghost" value="cancel">Stay</button>
+      <button class="btn btn--danger" value="ok" id="confirm-ok"></button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="dialog dialog--wide" id="results-dialog" aria-labelledby="results-title">
+  <div class="dialog__body">
+    <p class="badge" id="results-mode"></p>
+    <h2 id="results-title"></h2>
+    <p class="dialog__lede" id="results-lede"></p>
+    <ol class="results" id="results"></ol>
+    <p class="hint" id="results-wait" aria-live="polite"></p>
+    <div class="dialog__actions">
+      <button class="btn btn--ghost" type="button" id="results-leave">Back to lobby</button>
+      <button class="btn" type="button" id="results-view">View table</button>
+      <button class="btn btn--primary" type="button" id="results-rematch">Play again</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="dialog" id="settings-dialog" aria-labelledby="settings-title">
+  <form method="dialog" class="dialog__body">
+    <h2 id="settings-title">Settings</h2>
+    <div class="field">
+      <label for="set-volume">Sound effects volume <output id="set-volume-out" for="set-volume"></output></label>
+      <input type="range" id="set-volume" min="0" max="100" step="5">
+    </div>
+    <label class="check"><input type="checkbox" id="set-voice"> Read quick chat and UNO calls aloud</label>
+    <label class="check"><input type="checkbox" id="set-motion"> Reduce animations</label>
+    <label class="check"><input type="checkbox" id="set-shortcuts"> Keyboard shortcuts (D, P, U)</label>
+    <button class="btn btn--primary" value="close">Done</button>
+  </form>
+</dialog>
+
+<dialog class="dialog dialog--wide" id="leaderboard-dialog" aria-labelledby="leaderboard-title">
+  <form method="dialog" class="dialog__body">
+    <h2 id="leaderboard-title">Leaderboard</h2>
+    <p class="dialog__lede">Ranked games only: two or more people and no bots.</p>
+    <div class="leaderboard" id="leaderboard"><p class="empty">Loading…</p></div>
+    <button class="btn" value="close">Close</button>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}" defer></script>
+  <script type="module" src="{{ url_for('static', filename='js/play/main.js') }}"></script>
+{% endblock %}

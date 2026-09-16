@@ -1,0 +1,25 @@
+# Secrets and local data
+.env
+.env.*
+instance/
+*.db
+*.sqlite3
+score_key.key
+scores.enc.txt
+legacy/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Tooling / OS
+.DS_Store
+Thumbs.db
+node_modules/
+.idea/
+.vscode/

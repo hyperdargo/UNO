@@ -1,0 +1,20 @@
+{#- Server-rendered card. Must stay in sync with static/js/lib/cards.js. -#}
+{%- set GLYPHS = ["skip", "reverse", "skip_all", "discard_all", "wild", "wild_roulette"] -%}
+{%- set TEXT = {"draw2": "+2", "draw4": "+4", "wild_draw4": "+4", "wild_reverse_draw4": "+4", "wild_draw6": "+6", "wild_draw10": "+10"} -%}
+{%- macro card(color, value, size="m", label=None, extra="") -%}
+<div class="card card--{{ color }} card--{{ size }} {{ extra }}" role="img" aria-label="{{ label or (color ~ ' ' ~ value)|replace('_', ' ') }}">
+  {%- if value in GLYPHS %}
+  <span class="card__corner" aria-hidden="true"><svg><use href="#g-{{ value }}"/></svg></span>
+  <span class="card__face" aria-hidden="true"><svg viewBox="0 0 32 32"><use href="#g-{{ value }}"/></svg></span>
+  <span class="card__corner card__corner--end" aria-hidden="true"><svg><use href="#g-{{ value }}"/></svg></span>
+  {%- else %}
+  {%- set text = TEXT.get(value, value) %}
+  <span class="card__corner" aria-hidden="true">{{ text }}</span>
+  <span class="card__face{% if text|length > 1 %} card__face--text{% endif %}" aria-hidden="true">{% if value == "wild_reverse_draw4" %}<svg viewBox="0 0 32 32"><use href="#g-reverse"/></svg>{% else %}{{ text }}{% endif %}</span>
+  <span class="card__corner card__corner--end" aria-hidden="true">{{ text }}</span>
+  {%- endif %}
+</div>
+{%- endmacro -%}
+{%- macro back(size="m", extra="") -%}
+<div class="card card--back card--{{ size }} {{ extra }}" aria-hidden="true"><span class="card__mark">UNO</span></div>
+{%- endmacro -%}
